@@ -10,19 +10,28 @@
 <body>
     <h1>Drug Spending Predictions</h1>
     
-    <!-- Button to Show Charts (Moved Above the Table) -->
-    <button id="show-charts">Show Charts</button>
+    <!-- Button to Toggle Charts (Show/Hide) -->
+    <button id="toggle-charts">Show Charts</button>
     
     <!-- Charts (Initially Hidden) -->
     <div id="chart-container" style="display: none; text-align: center;">
         <h2>Spending Trends</h2>
-        <canvas id="spendingChart" class="large-chart" width="800" height="400"></canvas>
+        <canvas id="spendingChart" class="large-chart" width="1000" height="500"></canvas>
         
         <h2>Comparison (Bar Chart)</h2>
-        <canvas id="barChart" class="large-chart" width="800" height="400"></canvas>
+        <canvas id="barChart" class="large-chart" width="1000" height="500"></canvas>
         
         <h2>Spending Distribution (Pie Chart)</h2>
-        <canvas id="pieChart" class="large-chart" width="800" height="400"></canvas>
+        <canvas id="pieChart" class="large-chart" width="1000" height="500"></canvas>
+        
+        <!-- Button to Show More Details (Legend) -->
+        <button id="toggle-legend">Show More</button>
+        
+        <!-- Legend (Initially Hidden) -->
+        <div id="legend-container" style="display: none; text-align: center;">
+            <h2>Legend (Chart Colors)</h2>
+            <ul id="legend-list"></ul>
+        </div>
     </div>
     
     <!-- Filter Section -->

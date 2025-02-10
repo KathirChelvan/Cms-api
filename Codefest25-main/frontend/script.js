@@ -3,10 +3,14 @@ document.addEventListener("DOMContentLoaded", function () {
     let tableBody = document.getElementById("table-body");
     let drugFilter = document.getElementById("drug-filter");
     let chartContainer = document.getElementById("chart-container");
-    let showChartsButton = document.getElementById("show-charts");
+    let toggleChartsButton = document.getElementById("toggle-charts");
+    let toggleLegendButton = document.getElementById("toggle-legend");
+    let legendContainer = document.getElementById("legend-container");
+    let legendList = document.getElementById("legend-list");
     let spendingChart, barChart, pieChart;
 
     chartContainer.style.display = "none"; // Hide charts initially
+    legendContainer.style.display = "none"; // Hide legend initially
 
     fetch(API_URL)
         .then(response => response.json())
@@ -14,10 +18,12 @@ document.addEventListener("DOMContentLoaded", function () {
             let labels = []; // Years
             let datasets = []; // Drug spending data
             let totalSpendingData = {}; // Data for pie chart
+            let legendItems = [];
 
             Object.keys(data).forEach((drug, index) => {
                 let years = data[drug].years;
                 let totalSpending = data[drug].total_spending;
+                let color = getRandomColor();
                 
                 if (index === 0) labels = years; // Set years only once
                 
@@ -37,9 +43,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets.push({
                     label: drug,
                     data: totalSpending,
-                    borderColor: getRandomColor(),
-                    backgroundColor: getRandomColor(0.5),
-                    fill: false
+                    borderColor: color,
+                    backgroundColor: color,
+                    fill: false,
+                    borderWidth: 3,
+                    pointRadius: 5
                 });
 
                 // Populate Filter Dropdown
@@ -50,14 +58,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Aggregate data for Pie Chart
                 totalSpendingData[drug] = totalSpending.reduce((a, b) => a + b, 0);
+
+                // Create Legend Item
+                legendItems.push(`<li style="color: ${color};">${drug}</li>`);
             });
 
-            // Show charts when button is clicked
-            showChartsButton.addEventListener("click", function () {
-                chartContainer.style.display = "block";
-                renderLineChart(labels, datasets);
-                renderBarChart(labels, datasets);
-                renderPieChart(totalSpendingData);
+            // Toggle charts visibility
+            toggleChartsButton.addEventListener("click", function () {
+                if (chartContainer.style.display === "none") {
+                    chartContainer.style.display = "block";
+                    renderLineChart(labels, datasets);
+                    renderBarChart(labels, datasets);
+                    renderPieChart(totalSpendingData);
+                    toggleChartsButton.textContent = "Hide Charts";
+                } else {
+                    chartContainer.style.display = "none";
+                    toggleChartsButton.textContent = "Show Charts";
+                }
+            });
+
+            // Toggle legend visibility inside chart container
+            let legendButton = document.createElement("button");
+            legendButton.textContent = "Show More";
+            legendButton.id = "chart-legend-toggle";
+            chartContainer.appendChild(legendButton);
+            chartContainer.appendChild(legendContainer);
+
+            legendButton.addEventListener("click", function () {
+                if (legendContainer.style.display === "none") {
+                    legendContainer.style.display = "block";
+                    legendList.innerHTML = legendItems.join(" ");
+                    legendButton.textContent = "Hide More";
+                } else {
+                    legendContainer.style.display = "none";
+                    legendButton.textContent = "Show More";
+                }
             });
 
             // Filter Functionality
@@ -93,7 +128,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 labels: Object.keys(data),
                 datasets: [{
                     data: Object.values(data),
-                    backgroundColor: Object.keys(data).map(() => getRandomColor(0.7))
+                    backgroundColor: Object.keys(data).map(() => getRandomColor())
                 }]
             },
             options: { responsive: true }
@@ -108,7 +143,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function getRandomColor(opacity = 1) {
-        return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${opacity})`;
+    function getRandomColor() {
+        return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`;
     }
 });
+    
