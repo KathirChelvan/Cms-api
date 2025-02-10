@@ -3,11 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drug Spending Predictions</title>
+    <title>Drug Spending Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js -->
 </head>
 <body>
     <h1>Drug Spending Predictions</h1>
+    
+    <!-- Button to Show Charts (Moved Above the Table) -->
+    <button id="show-charts">Show Charts</button>
+    
+    <!-- Charts (Initially Hidden) -->
+    <div id="chart-container" style="display: none; text-align: center;">
+        <h2>Spending Trends</h2>
+        <canvas id="spendingChart" class="large-chart" width="800" height="400"></canvas>
+        
+        <h2>Comparison (Bar Chart)</h2>
+        <canvas id="barChart" class="large-chart" width="800" height="400"></canvas>
+        
+        <h2>Spending Distribution (Pie Chart)</h2>
+        <canvas id="pieChart" class="large-chart" width="800" height="400"></canvas>
+    </div>
+    
+    <!-- Filter Section -->
+    <div class="filter-container">
+        <label for="drug-filter">Filter by Drug:</label>
+        <select id="drug-filter">
+            <option value="all">All Drugs</option>
+        </select>
+    </div>
+
+    <!-- Table -->
     <table>
         <thead>
             <tr>
@@ -19,6 +45,7 @@
         </thead>
         <tbody id="table-body"></tbody>
     </table>
+
     <script src="script.js"></script>
 </body>
 </html>
