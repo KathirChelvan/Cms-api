@@ -3,13 +3,12 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 import json
 import logging
-import matplotlib.pyplot as plt
-import os
+from flask import Flask, jsonify
+from flask_cors import CORS
 
 class DrugSpendingPredictor:
     def __init__(self):
         """Initialize the DrugSpendingPredictor."""
-        # Setup logging
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
@@ -24,12 +23,7 @@ class DrugSpendingPredictor:
         self.models_avg = {}
 
     def load_local_data(self, file_path='drug_data.json'):
-        """
-        Load data from local JSON file.
-        
-        Args:
-            file_path (str): Path to the JSON file
-        """
+        """Load data from local JSON file."""
         self.logger.info(f"Loading data from: {file_path}")
         
         try:
@@ -55,22 +49,18 @@ class DrugSpendingPredictor:
             return False
             
         try:
-            # Ensure only numeric columns are processed
             numeric_columns = [col for col in self.data.columns if col.startswith('Tot_Spndng_') or col.startswith('Avg_Spnd_Per_Bene_')]
             
             for col in numeric_columns:
                 self.data[col] = pd.to_numeric(self.data[col], errors='coerce')
-            
-            # Handle missing values (fill NaN with column means)
-            self.data[numeric_columns] = self.data[numeric_columns].fillna(self.data[numeric_columns].mean())
 
+            self.data[numeric_columns] = self.data[numeric_columns].fillna(self.data[numeric_columns].mean())
             self.logger.info("Data preprocessing completed successfully")
             return True
             
         except Exception as e:
             self.logger.error(f"Error during preprocessing: {e}")
             return False
-
 
     def train_models(self):
         """Train prediction models for each unique drug."""
@@ -85,15 +75,12 @@ class DrugSpendingPredictor:
             drug_name = drug['Brnd_Name']
             
             try:
-                # Prepare spending data
                 total_spending = np.array([float(drug[f'Tot_Spndng_{year}']) for year in range(2018, 2023)])
                 avg_spending = np.array([float(drug[f'Avg_Spnd_Per_Bene_{year}']) for year in range(2018, 2023)])
-                
-                # Train models
+
                 model_total = LinearRegression().fit(years, total_spending)
                 model_avg = LinearRegression().fit(years, avg_spending)
-                
-                # Store models
+
                 self.models_total[drug_name] = model_total
                 self.models_avg[drug_name] = model_avg
                 
@@ -113,40 +100,50 @@ class DrugSpendingPredictor:
 
         future_years = np.array(range(2023, 2023 + years_ahead)).reshape(-1, 1)
         predictions = {}
-        
+
         for drug_name in self.models_total.keys():
             try:
-                total_predictions = self.models_total[drug_name].predict(future_years)
-                avg_predictions = self.models_avg[drug_name].predict(future_years)
-                
-                print(f"\nPredictions for {drug_name}:")
-                for i, year in enumerate(range(2023, 2023 + years_ahead)):
-                    print(f"Year {year}:")
-                    print(f"  Predicted Total Spending: ${total_predictions[i]:,.2f}")
-                    print(f"  Predicted Avg Spending per Beneficiary: ${avg_predictions[i]:,.2f}")
-                    
+                total_predictions = self.models_total[drug_name].predict(future_years).tolist()
+                avg_predictions = self.models_avg[drug_name].predict(future_years).tolist()
+
                 predictions[drug_name] = {
                     'years': list(range(2023, 2023 + years_ahead)),
                     'total_spending': total_predictions,
                     'avg_spending': avg_predictions
                 }
-                
+
             except Exception as e:
                 self.logger.error(f"Prediction error for {drug_name}: {e}")
                 
         return predictions
 
-def main():
-    predictor = DrugSpendingPredictor()
-    
-    print("Loading data...")
-    if predictor.load_local_data():
-        print("Processing data...")
-        if predictor.preprocess_data():
-            print("Training models...")
-            if predictor.train_models():
-                print("\nMaking predictions...")
-                predictor.predict_future(3)
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)  # Enable Cross-Origin Requests
 
-if __name__ == "__main__":
-    main()
+predictor = DrugSpendingPredictor()
+
+@app.route('/load_data', methods=['GET'])
+def load_data():
+    """Load and preprocess data."""
+    if predictor.load_local_data() and predictor.preprocess_data():
+        return jsonify({"message": "Data loaded successfully"}), 200
+    return jsonify({"error": "Failed to load data"}), 500
+
+@app.route('/train_models', methods=['GET'])
+def train_models():
+    """Train the prediction models."""
+    if predictor.train_models():
+        return jsonify({"message": "Models trained successfully"}), 200
+    return jsonify({"error": "Model training failed"}), 500
+
+@app.route('/predict', methods=['GET'])
+def predict():
+    """Return predictions as JSON."""
+    predictions = predictor.predict_future(3)
+    if predictions:
+        return jsonify(predictions), 200
+    return jsonify({"error": "Prediction failed"}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
